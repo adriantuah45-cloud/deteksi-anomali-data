@@ -2,7 +2,8 @@
 matcher.py
 Logika inti: membaca file, normalisasi data, pencocokan, dan deteksi anomali
 berdasarkan kolom NIP & Nama. Modul ini murni Python (tanpa Streamlit),
-sehingga bisa di-unit test atau dipakai ulang di tempat lain.
+sehingga bisa di-unit test atau dipakai ulang di tempat lain (termasuk
+fitur Lengkapi Data Otomatis).
 """
 
 import re
@@ -41,14 +42,19 @@ def finalize_dataframe(df: pd.DataFrame, nip_col: str, nama_col: str) -> pd.Data
     return df
 
 
-def drop_empty_rows(df: pd.DataFrame) -> pd.DataFrame:
+def drop_empty_rows(df: pd.DataFrame, cols: list = None) -> pd.DataFrame:
     """
-    Buang baris kosong/spacer yang tidak berisi data NIP maupun Nama.
+    Buang baris kosong/spacer. Secara default memeriksa kolom NIP & Nama;
+    fitur lain (mis. Lengkapi Data) bisa memberi kolom acuan sendiri lewat
+    parameter `cols` (contoh: cols=["NIP"] saja).
     File Excel sering punya baris kosong sisipan (mis. akibat merge cell
     di kolom lain) yang membuat jumlah baris fisik jauh lebih banyak
     dari jumlah data sebenarnya.
     """
-    cols = [c for c in REQUIRED_COLUMNS if c in df.columns]
+    if cols is None:
+        cols = [c for c in REQUIRED_COLUMNS if c in df.columns]
+    else:
+        cols = [c for c in cols if c in df.columns]
     if not cols:
         return df
 
@@ -57,7 +63,7 @@ def drop_empty_rows(df: pd.DataFrame) -> pd.DataFrame:
         return col.isna() | text.isin(["", "nan", "none"])
 
     mask_blank = pd.concat([_is_blank(df[c]) for c in cols], axis=1)
-    all_blank = mask_blank.all(axis=1)  # baris dianggap spacer jika SEMUA kolom wajib kosong
+    all_blank = mask_blank.all(axis=1)  # baris dianggap spacer jika SEMUA kolom acuan kosong
 
     return df[~all_blank].reset_index(drop=True)
 
