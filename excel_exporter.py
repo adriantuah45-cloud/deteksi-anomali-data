@@ -85,3 +85,18 @@ def export_to_excel(result_df: pd.DataFrame) -> bytes:
     buffer = io.BytesIO()
     wb.save(buffer)
     return buffer.getvalue()
+
+
+def export_simple_excel(df: pd.DataFrame, sheet_name: str = "Data") -> bytes:
+    """
+    Ekspor DataFrame apa adanya ke satu sheet Excel (tanpa pewarnaan status),
+    dipakai untuk fitur Lengkapi Data Otomatis.
+    """
+    wb = Workbook()
+    ws = wb.active
+    ws.title = sheet_name[:31]  # batas nama sheet Excel maksimal 31 karakter
+    _write_sheet(ws, df)
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    return buffer.getvalue()
