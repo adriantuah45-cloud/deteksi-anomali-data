@@ -65,6 +65,7 @@ def fill_missing_columns(
     return df
 
 
+
 def summarize_fill(df_result: pd.DataFrame) -> dict:
     """Ringkasan hasil pengisian: total, berhasil diisi, sudah lengkap, tidak ditemukan."""
     total = len(df_result)
