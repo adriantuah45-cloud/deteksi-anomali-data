@@ -127,15 +127,44 @@ if "result_df" in st.session_state:
         ).any(axis=1)
         view_df = view_df[mask]
 
-    st.dataframe(view_df, use_container_width=True, hide_index=True)
+    # Urutkan: Anomali Berat -> Anomali Ringan -> Cocok (anomali ngumpul di atas)
+    STATUS_ORDER = {"Anomali Berat": 0, "Anomali Ringan": 1, "Cocok": 2}
+    view_df = view_df.copy()
+    view_df["_urut"] = view_df["Status"].map(STATUS_ORDER).fillna(3)
+    view_df = view_df.sort_values("_urut").drop(columns="_urut").reset_index(drop=True)
 
-    excel_bytes = export_to_excel(result_df)
-    st.download_button(
-        "⬇ Export ke Excel",
-        data=excel_bytes,
-        file_name="hasil_deteksi_anomali.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        type="primary",
-    )
+    # Pewarnaan baris sesuai status
+    def warnai_baris(row):
+        warna = {
+            "Cocok": "background-color: #163d2b; color: #b7f0c9",
+            "Anomali Ringan": "background-color: #4a3a12; color: #ffe0a3",
+            "Anomali Berat": "background-color: #4a1f21; color: #ffb3b8",
+        }
+        style = warna.get(row["Status"], "")
+        return [style] * len(row)
+
+    styled_df = view_df.style.apply(warnai_baris, axis=1)
+    st.dataframe(styled_df, use_container_width=True, hide_index=True)
+
+    col_dl1, col_dl2 = st.columns(2)
+
+    with col_dl1:
+        excel_bytes_filtered = export_to_excel(view_df.drop(columns=["_urut"], errors="ignore"))
+        st.download_button(
+            f"⬇ Export Tampilan Saat Ini ({len(view_df)} baris)",
+            data=excel_bytes_filtered,
+            file_name="hasil_filter_saat_ini.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            type="primary",
+        )
+
+    with col_dl2:
+        excel_bytes_all = export_to_excel(result_df)
+        st.download_button(
+            f"⬇ Export Semua Data ({len(result_df)} baris)",
+            data=excel_bytes_all,
+            file_name="hasil_deteksi_anomali.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
 else:
     st.info("Unggah file, atur kolom yang dicocokkan, lalu klik 'Jalankan Pencocokan'.")
