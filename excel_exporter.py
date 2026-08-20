@@ -46,7 +46,7 @@ def _write_sheet(ws, df: pd.DataFrame) -> None:
                 cell.fill = fill
 
     for i, col in enumerate(df.columns, 1):
-        col_len = df[col].astype(str).map(len).max() if len(df) else 0
+        col_len = df[col].fillna("").astype(str).map(len).max() if len(df) else 0
         ws.column_dimensions[get_column_letter(i)].width = min(max(col_len, len(str(col))) + 4, 40)
 
     ws.freeze_panes = "A2"
